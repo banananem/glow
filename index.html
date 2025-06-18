@@ -4,8 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Calculadora Glow</title>
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
-  <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
   <style>
     /* Reset simples */
     * {
@@ -141,6 +139,7 @@
       user-select: none;
     }
 
+    /* Responsivo */
     @media (max-width: 640px) {
       h1 {
         font-size: 2.5rem;
@@ -154,6 +153,7 @@
       }
     }
 
+    /* Histórico itens */
     #historicoSujo {
       margin-top: 20px;
       max-height: 160px;
@@ -174,6 +174,161 @@
   </style>
 </head>
 <body>
-  <!-- Conteúdo continua igual... -->
+  <h1>Calculadora Glow</h1>
+  <div class="container">
+    <label data-tooltip="Informe a quantidade de Capuz">Capuz (quantidade): <input type="number" id="capuz" value="0" min="0" /></label>
+    <label data-tooltip="Informe a quantidade de Algemas">Algemas (quantidade): <input type="number" id="algemas" value="0" min="0" /></label>
+    <label data-tooltip="Informe a quantidade de C4">C4 (quantidade): <input type="number" id="c4" value="0" min="0" /></label>
+    <label data-tooltip="Informe a quantidade de Serra">Serra (quantidade): <input type="number" id="serra" value="0" min="0" /></label>
+    <label data-tooltip="Informe a quantidade de Mochilas">Mochilas (quantidade): <input type="number" id="mochilas" value="0" min="0" /></label>
+    <button id="btnCalcular" onclick="calcular()">Calcular Total</button>
+
+    <div class="resultado" id="resultado"></div>
+
+    <hr>
+
+    <h2>Dinheiro Sujo</h2>
+    <label data-tooltip="Digite vários valores separados por vírgula, ex: 1000, 2500, 300">Digite vários valores separados por vírgula:</label>
+    <textarea id="valoresSujo" rows="3" placeholder="Ex: 1000, 2500, 300"></textarea>
+    <button id="btnCalcularSujo" onclick="calcularSujoMultiplo()" disabled>Calcular Soma + 40%</button>
+    <button id="btnLimparSujo" onclick="limparSujo()">Limpar Dinheiro Sujo</button>
+
+    <div class="resultado" id="resultadoSujoMultiplo"></div>
+
+    <h3>Histórico de cálculos</h3>
+    <div id="historicoSujo" aria-live="polite" aria-atomic="true" role="region"></div>
+  </div>
+
+<script>
+const valores = {
+  parceria: {
+    capuz: 10000,
+    algemas: 15000,
+    c4: 25000,
+    serra: 20000,
+    mochilas: 8000
+  },
+  semParceria: {
+    capuz: 15000,
+    algemas: 20000,
+    c4: 30000,
+    serra: 25000,
+    mochilas: 10000
+  }
+};
+
+
+  // Seleção dos elementos do dinheiro sujo
+  const inputValoresSujo = document.getElementById('valoresSujo');
+  const btnCalcularSujo = document.getElementById('btnCalcularSujo');
+  const resultadoSujo = document.getElementById('resultadoSujoMultiplo');
+  const historicoSujo = document.getElementById('historicoSujo');
+
+  // Habilitar botão calcular sujo se input válido
+  inputValoresSujo.addEventListener('input', () => {
+    const val = inputValoresSujo.value.trim();
+    // Verifica se contém pelo menos um número válido
+    const possuiNumero = val.split(',')
+      .some(v => !isNaN(parseFloat(v.trim())) && parseFloat(v.trim()) >= 0);
+
+    btnCalcularSujo.disabled = !possuiNumero;
+    if(!possuiNumero) resultadoSujo.innerHTML = '';
+  });
+
+  // Limpa campos e resultados de dinheiro sujo
+  function limparSujo() {
+    inputValoresSujo.value = '';
+    resultadoSujo.innerHTML = '';
+    btnCalcularSujo.disabled = true;
+  }
+
+  // Cálculo geral dos itens (com e sem parceria)
+  function calcular() {
+    const capuz = parseInt(document.getElementById('capuz').value) || 0;
+    const algemas = parseInt(document.getElementById('algemas').value) || 0;
+    const c4 = parseInt(document.getElementById('c4').value) || 0;
+    const serra = parseInt(document.getElementById('serra').value) || 0;
+    const mochilas = parseInt(document.getElementById('mochilas').value) || 0;
+
+    // COM parceria
+    const totalParceria =
+      capuz * valores.parceria.capuz +
+      algemas * valores.parceria.algemas +
+      c4 * valores.parceria.c4 +
+      serra * valores.parceria.serra +
+      mochilas * valores.parceria.mochilas;
+
+    const painelParceria = totalParceria * 0.8;
+    const vendedorParceria = totalParceria * 0.2;
+
+    // SEM parceria
+    const totalSemParceria =
+      capuz * valores.semParceria.capuz +
+      algemas * valores.semParceria.algemas +
+      c4 * valores.semParceria.c4 +
+      serra * valores.semParceria.serra +
+      mochilas * valores.semParceria.mochilas;
+
+    const painelSemParceria = totalSemParceria * 0.8;
+    const vendedorSemParceria = totalSemParceria * 0.2;
+
+    const resultadoDiv = document.getElementById('resultado');
+    resultadoDiv.innerHTML = `
+      <p><strong>💸 Valor com Parceria:</strong> R$ ${totalParceria.toLocaleString()}<br>
+      ➤ Painel (80%): R$ ${painelParceria.toLocaleString(undefined, { minimumFractionDigits: 2 })}<br>
+      ➤ Comissão (20%): R$ ${vendedorParceria.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+      <hr>
+      <p><strong>❌ Valor sem Parceria:</strong> R$ ${totalSemParceria.toLocaleString()}<br>
+      ➤ Painel (80%): R$ ${painelSemParceria.toLocaleString(undefined, { minimumFractionDigits: 2 })}<br>
+      ➤ Comissão (20%): R$ ${vendedorSemParceria.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+    `;
+  }
+
+  // Formata números para moeda com R$ e separador simples (sem complexidade)
+  function formatarMoeda(valor) {
+    return 'R$ ' + valor.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  // Calcula soma dos valores sujos e 40%
+  function calcularSujoMultiplo() {
+    const input = inputValoresSujo.value;
+    if (!input.trim()) {
+      resultadoSujo.innerHTML = '';
+      return;
+    }
+
+    const valores = input.split(',')
+      .map(v => parseFloat(v.trim()))
+      .filter(v => !isNaN(v) && v >= 0);
+
+    if (valores.length === 0) {
+      resultadoSujo.innerHTML = '<p style="color:#f44;">Por favor, digite valores numéricos válidos.</p>';
+      return;
+    }
+
+    const soma = valores.reduce((acc, val) => acc + val, 0);
+    const quarentaPorcento = soma * 0.4;
+
+    resultadoSujo.innerHTML = `
+      <p><strong>Soma dos valores:</strong> ${formatarMoeda(soma)}</p>
+      <p><strong>40% da soma:</strong> <span style="color:#ff4444;">${formatarMoeda(quarentaPorcento)}</span></p>
+    `;
+
+    // Atualizar histórico
+    adicionarHistorico(soma, quarentaPorcento);
+  }
+
+  // Adiciona cálculo no histórico, mantém máximo 5
+  function adicionarHistorico(soma, quarentaPorcento) {
+    const entry = document.createElement('p');
+    const dataHora = new Date().toLocaleString('pt-BR');
+    entry.textContent = `[${dataHora}] Soma: ${formatarMoeda(soma)} — 40%: ${formatarMoeda(quarentaPorcento)}`;
+    historicoSujo.prepend(entry);
+    // Limitar histórico a 5 entradas
+    if (historicoSujo.children.length > 5) {
+      historicoSujo.removeChild(historicoSujo.lastChild);
+    }
+  }
+</script>
 </body>
 </html>
