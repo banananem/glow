@@ -2,174 +2,333 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Calculadora Glow</title>
   <style>
+    /* Reset simples */
+    * {
+      box-sizing: border-box;
+    }
     body {
       margin: 0;
-      padding: 0;
+      padding: 0 10px 40px;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: url('https://live.staticflickr.com/272/19671823490_9cc6fefe71_h.jpg') no-repeat center center fixed;
       background-size: cover;
       color: #fff;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     h1 {
-      text-align: center;
+      margin-top: 40px;
       font-size: 3rem;
       color: #f0f;
       text-shadow: 0 0 10px #f0f, 0 0 20px #0ff;
-      margin-top: 40px;
+      text-align: center;
     }
 
     .container {
       max-width: 600px;
-      margin: 30px auto;
+      width: 100%;
       background: rgba(0, 0, 0, 0.85);
-      padding: 30px;
+      padding: 30px 25px 40px;
       border-radius: 20px;
       box-shadow: 0 0 25px #ff00ff88;
+      margin-top: 20px;
     }
 
     label {
       display: block;
-      margin-bottom: 10px;
-      font-weight: bold;
+      margin-bottom: 8px;
+      font-weight: 700;
       color: #0ff;
+      position: relative;
+      cursor: help;
+    }
+    label[data-tooltip]:hover::after {
+      content: attr(data-tooltip);
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translate(10px, -50%);
+      background: #0ff;
+      color: #000;
+      padding: 6px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+      font-size: 0.8rem;
+      font-weight: 600;
+      z-index: 10;
+      box-shadow: 0 0 5px #0ffbb;
+      pointer-events: none;
     }
 
-    input[type="number"] {
+    input[type="number"], textarea {
       width: 100%;
-      padding: 10px;
+      padding: 12px;
       border: none;
       border-radius: 5px;
       margin-bottom: 20px;
       background: #111;
       color: #0ff;
       box-shadow: inset 0 0 5px #0ff;
+      font-size: 1rem;
+      resize: vertical;
+      transition: box-shadow 0.3s;
+    }
+    input[type="number"]:invalid, textarea:invalid {
+      box-shadow: inset 0 0 8px #f44;
+    }
+    input[type="number"]:focus, textarea:focus {
+      outline: none;
+      box-shadow: inset 0 0 8px #0ff;
     }
 
     button {
       width: 100%;
-      padding: 12px;
-      font-size: 1rem;
+      padding: 14px;
+      font-size: 1.1rem;
       background: linear-gradient(to right, #f0f, #0ff);
       color: #000;
       font-weight: bold;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
-      transition: transform 0.2s;
+      transition: transform 0.25s, opacity 0.25s;
+      margin-bottom: 10px;
+      user-select: none;
     }
-
-    button:hover {
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+    button:hover:not(:disabled) {
       transform: scale(1.05);
     }
 
     .resultado {
       margin-top: 30px;
       background: rgba(0, 0, 0, 0.9);
-      padding: 20px;
-      border-radius: 15px;
+      padding: 25px;
+      border-radius: 18px;
       box-shadow: 0 0 15px #0ff;
+      font-size: 1.15rem;
+      min-height: 60px;
     }
 
     .resultado p {
       margin: 10px 0;
-      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    hr {
+      border-color: #0ff;
+      margin: 40px 0;
+      border-width: 1.5px;
+    }
+
+    h2 {
+      margin-top: 40px;
+      text-align: center;
+      color: #ff44ff;
+      font-weight: 700;
+      user-select: none;
+    }
+
+    /* Responsivo */
+    @media (max-width: 640px) {
+      h1 {
+        font-size: 2.5rem;
+      }
+      .container {
+        padding: 20px 15px 30px;
+      }
+      button {
+        font-size: 1rem;
+        padding: 12px;
+      }
+    }
+
+    /* Histórico itens */
+    #historicoSujo {
+      margin-top: 20px;
+      max-height: 160px;
+      overflow-y: auto;
+      background: #111;
+      padding: 10px 15px;
+      border-radius: 10px;
+      box-shadow: inset 0 0 10px #0ff;
+      font-size: 0.95rem;
+      color: #0ff;
+      user-select: text;
+    }
+    #historicoSujo p {
+      margin: 5px 0;
+      border-bottom: 1px solid #0ff2;
+      padding-bottom: 4px;
     }
   </style>
 </head>
 <body>
   <h1>Calculadora Glow</h1>
   <div class="container">
-    <label>Capuz (quantidade): <input type="number" id="capuz" value="0" /></label>
-    <label>Algemas (quantidade): <input type="number" id="algemas" value="0" /></label>
-    <label>C4 (quantidade): <input type="number" id="c4" value="0" /></label>
-    <label>Serra (quantidade): <input type="number" id="serra" value="0" /></label>
-    <label>Mochilas (quantidade): <input type="number" id="mochilas" value="0" /></label>
-    <button onclick="calcular()">Calcular Total</button>
+    <label data-tooltip="Informe a quantidade de Capuz">Capuz (quantidade): <input type="number" id="capuz" value="0" min="0" /></label>
+    <label data-tooltip="Informe a quantidade de Algemas">Algemas (quantidade): <input type="number" id="algemas" value="0" min="0" /></label>
+    <label data-tooltip="Informe a quantidade de C4">C4 (quantidade): <input type="number" id="c4" value="0" min="0" /></label>
+    <label data-tooltip="Informe a quantidade de Serra">Serra (quantidade): <input type="number" id="serra" value="0" min="0" /></label>
+    <label data-tooltip="Informe a quantidade de Mochilas">Mochilas (quantidade): <input type="number" id="mochilas" value="0" min="0" /></label>
+    <button id="btnCalcular" onclick="calcular()">Calcular Total</button>
 
     <div class="resultado" id="resultado"></div>
 
-    <hr style="margin: 40px 0; border-color: #0ff;">
+    <hr>
 
-    <h2 style="text-align:center; color:#ff44ff;">Dinheiro Sujo</h2>
-    <label>Digite um valor total (R$): <input type="number" id="valorManual" /></label>
-    <button onclick="calcularSujoManual()">Calcular Sujo (40%)</button>
-    <div class="resultado" id="resultadoSujoManual"></div>
+    <h2>Dinheiro Sujo</h2>
+    <label data-tooltip="Digite vários valores separados por vírgula, ex: 1000, 2500, 300">Digite vários valores separados por vírgula:</label>
+    <textarea id="valoresSujo" rows="3" placeholder="Ex: 1000, 2500, 300"></textarea>
+    <button id="btnCalcularSujo" onclick="calcularSujoMultiplo()" disabled>Calcular Soma + 40%</button>
+    <button id="btnLimparSujo" onclick="limparSujo()">Limpar Dinheiro Sujo</button>
+
+    <div class="resultado" id="resultadoSujoMultiplo"></div>
+
+    <h3>Histórico de cálculos</h3>
+    <div id="historicoSujo" aria-live="polite" aria-atomic="true" role="region"></div>
   </div>
 
-  <script>
-    const valores = {
-      parceria: {
-        capuz: 10000,
-        algemas: 15000,
-        c4: 25000,
-        serra: 20000,
-        mochilas: 8000
-      },
-      semParceria: {
-        capuz: 20000,
-        algemas: 30000,
-        c4: 40000,
-        serra: 35000,
-        mochilas: 12000
-      }
-    };
+<script>
+const valores = {
+  parceria: {
+    capuz: 10000,
+    algemas: 15000,
+    c4: 25000,
+    serra: 20000,
+    mochilas: 8000
+  },
+  semParceria: {
+    capuz: 15000,
+    algemas: 20000,
+    c4: 30000,
+    serra: 25000,
+    mochilas: 10000
+  }
+};
 
-    function calcular() {
-      const capuz = parseInt(document.getElementById('capuz').value) || 0;
-      const algemas = parseInt(document.getElementById('algemas').value) || 0;
-      const c4 = parseInt(document.getElementById('c4').value) || 0;
-      const serra = parseInt(document.getElementById('serra').value) || 0;
-      const mochilas = parseInt(document.getElementById('mochilas').value) || 0;
 
-      // COM parceria
-      const totalParceria =
-        capuz * valores.parceria.capuz +
-        algemas * valores.parceria.algemas +
-        c4 * valores.parceria.c4 +
-        serra * valores.parceria.serra +
-        mochilas * valores.parceria.mochilas;
+  // Seleção dos elementos do dinheiro sujo
+  const inputValoresSujo = document.getElementById('valoresSujo');
+  const btnCalcularSujo = document.getElementById('btnCalcularSujo');
+  const resultadoSujo = document.getElementById('resultadoSujoMultiplo');
+  const historicoSujo = document.getElementById('historicoSujo');
 
-      const painelParceria = totalParceria * 0.8;
-      const vendedorParceria = totalParceria * 0.2;
+  // Habilitar botão calcular sujo se input válido
+  inputValoresSujo.addEventListener('input', () => {
+    const val = inputValoresSujo.value.trim();
+    // Verifica se contém pelo menos um número válido
+    const possuiNumero = val.split(',')
+      .some(v => !isNaN(parseFloat(v.trim())) && parseFloat(v.trim()) >= 0);
 
-      // SEM parceria
-      const totalSemParceria =
-        capuz * valores.semParceria.capuz +
-        algemas * valores.semParceria.algemas +
-        c4 * valores.semParceria.c4 +
-        serra * valores.semParceria.serra +
-        mochilas * valores.semParceria.mochilas;
+    btnCalcularSujo.disabled = !possuiNumero;
+    if(!possuiNumero) resultadoSujo.innerHTML = '';
+  });
 
-      const painelSemParceria = totalSemParceria * 0.8;
-      const vendedorSemParceria = totalSemParceria * 0.2;
+  // Limpa campos e resultados de dinheiro sujo
+  function limparSujo() {
+    inputValoresSujo.value = '';
+    resultadoSujo.innerHTML = '';
+    btnCalcularSujo.disabled = true;
+  }
 
-      document.getElementById('resultado').innerHTML = `
-        <p><strong>💸 Valor com Parceria:</strong> R$ ${totalParceria.toLocaleString()}<br>
-        ➤ Painel (80%): R$ ${painelParceria.toLocaleString(undefined, { minimumFractionDigits: 2 })}<br>
-        ➤ Comissão (20%): R$ ${vendedorParceria.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-        <hr>
-        <p><strong>❌ Valor sem Parceria:</strong> R$ ${totalSemParceria.toLocaleString()}<br>
-        ➤ Painel (80%): R$ ${painelSemParceria.toLocaleString(undefined, { minimumFractionDigits: 2 })}<br>
-        ➤ Comissão (20%): R$ ${vendedorSemParceria.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-      `;
+  // Cálculo geral dos itens (com e sem parceria)
+  function calcular() {
+    const capuz = parseInt(document.getElementById('capuz').value) || 0;
+    const algemas = parseInt(document.getElementById('algemas').value) || 0;
+    const c4 = parseInt(document.getElementById('c4').value) || 0;
+    const serra = parseInt(document.getElementById('serra').value) || 0;
+    const mochilas = parseInt(document.getElementById('mochilas').value) || 0;
+
+    // COM parceria
+    const totalParceria =
+      capuz * valores.parceria.capuz +
+      algemas * valores.parceria.algemas +
+      c4 * valores.parceria.c4 +
+      serra * valores.parceria.serra +
+      mochilas * valores.parceria.mochilas;
+
+    const painelParceria = totalParceria * 0.8;
+    const vendedorParceria = totalParceria * 0.2;
+
+    // SEM parceria
+    const totalSemParceria =
+      capuz * valores.semParceria.capuz +
+      algemas * valores.semParceria.algemas +
+      c4 * valores.semParceria.c4 +
+      serra * valores.semParceria.serra +
+      mochilas * valores.semParceria.mochilas;
+
+    const painelSemParceria = totalSemParceria * 0.8;
+    const vendedorSemParceria = totalSemParceria * 0.2;
+
+    const resultadoDiv = document.getElementById('resultado');
+    resultadoDiv.innerHTML = `
+      <p><strong>💸 Valor com Parceria:</strong> R$ ${totalParceria.toLocaleString()}<br>
+      ➤ Painel (80%): R$ ${painelParceria.toLocaleString(undefined, { minimumFractionDigits: 2 })}<br>
+      ➤ Comissão (20%): R$ ${vendedorParceria.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+      <hr>
+      <p><strong>❌ Valor sem Parceria:</strong> R$ ${totalSemParceria.toLocaleString()}<br>
+      ➤ Painel (80%): R$ ${painelSemParceria.toLocaleString(undefined, { minimumFractionDigits: 2 })}<br>
+      ➤ Comissão (20%): R$ ${vendedorSemParceria.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+    `;
+  }
+
+  // Formata números para moeda com R$ e separador simples (sem complexidade)
+  function formatarMoeda(valor) {
+    return 'R$ ' + valor.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  // Calcula soma dos valores sujos e 40%
+  function calcularSujoMultiplo() {
+    const input = inputValoresSujo.value;
+    if (!input.trim()) {
+      resultadoSujo.innerHTML = '';
+      return;
     }
 
-    function calcularSujoManual() {
-      const valor = parseFloat(document.getElementById('valorManual').value);
-      if (!isNaN(valor) && valor > 0) {
-        const sujo = valor * 0.4;
-        document.getElementById('resultadoSujoManual').innerHTML = `
-          <p><strong>40% de R$ ${valor.toLocaleString(undefined, { minimumFractionDigits: 2 })}:</strong><br>
-          <span style="color:#ff4444">R$ ${sujo.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span></p>
-        `;
-      } else {
-        document.getElementById('resultadoSujoManual').innerHTML = '';
-      }
+    const valores = input.split(',')
+      .map(v => parseFloat(v.trim()))
+      .filter(v => !isNaN(v) && v >= 0);
+
+    if (valores.length === 0) {
+      resultadoSujo.innerHTML = '<p style="color:#f44;">Por favor, digite valores numéricos válidos.</p>';
+      return;
     }
-  </script>
+
+    const soma = valores.reduce((acc, val) => acc + val, 0);
+    const quarentaPorcento = soma * 0.4;
+
+    resultadoSujo.innerHTML = `
+      <p><strong>Soma dos valores:</strong> ${formatarMoeda(soma)}</p>
+      <p><strong>40% da soma:</strong> <span style="color:#ff4444;">${formatarMoeda(quarentaPorcento)}</span></p>
+    `;
+
+    // Atualizar histórico
+    adicionarHistorico(soma, quarentaPorcento);
+  }
+
+  // Adiciona cálculo no histórico, mantém máximo 5
+  function adicionarHistorico(soma, quarentaPorcento) {
+    const entry = document.createElement('p');
+    const dataHora = new Date().toLocaleString('pt-BR');
+    entry.textContent = `[${dataHora}] Soma: ${formatarMoeda(soma)} — 40%: ${formatarMoeda(quarentaPorcento)}`;
+    historicoSujo.prepend(entry);
+    // Limitar histórico a 5 entradas
+    if (historicoSujo.children.length > 5) {
+      historicoSujo.removeChild(historicoSujo.lastChild);
+    }
+  }
+</script>
 </body>
 </html>
